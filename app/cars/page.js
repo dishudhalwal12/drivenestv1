@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import CarCard from '@/components/CarCard';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Filter, X, ChevronDown, SlidersHorizontal } from 'lucide-react';
 
 export default function CarsPage() {
   const searchParams = useSearchParams();
@@ -18,6 +19,7 @@ export default function CarsPage() {
     maxPrice: '',
     location: initialLocation,
   });
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   // Sync filters if URL changes (e.g. from hero search)
   useEffect(() => {
@@ -76,13 +78,23 @@ export default function CarsPage() {
   return (
     <div className="bg-pitch-black min-h-screen pt-12 pb-24">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.h1 
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="text-heading font-semibold mb-12 tracking-tight text-cloud-white"
-        >
-          Browse Cars
-        </motion.h1>
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 md:mb-12 gap-4">
+          <motion.h1 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="text-[32px] md:text-[44px] font-bold tracking-tight text-cloud-white"
+          >
+            Browse Cars
+          </motion.h1>
+
+          <button 
+            onClick={() => setShowMobileFilters(!showMobileFilters)}
+            className="lg:hidden flex items-center justify-center gap-2 bg-white border border-deep-graphite px-6 py-3 rounded-buttons font-bold text-cloud-white hover:bg-space-gray transition shadow-sm"
+          >
+            <Filter size={18} />
+            {showMobileFilters ? 'Hide Filters' : 'Show Filters'}
+          </button>
+        </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
           {/* Filters Sidebar */}
@@ -90,58 +102,67 @@ export default function CarsPage() {
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6 }}
-            className="lg:col-span-1"
+            className={`lg:col-span-1 ${showMobileFilters ? 'block' : 'hidden lg:block'}`}
           >
-            <div className="bg-space-gray p-8 rounded-cards border border-deep-graphite sticky top-24">
+            <div className="bg-white p-6 md:p-8 rounded-[24px] border border-deep-graphite sticky top-24 shadow-sm">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-[20px] font-semibold text-cloud-white">Filters</h2>
+                <div className="flex items-center gap-2">
+                  <SlidersHorizontal size={18} className="text-interactive-blue" />
+                  <h2 className="text-[18px] md:text-[20px] font-bold text-cloud-white">Filters</h2>
+                </div>
                 <button
                   onClick={resetFilters}
-                  className="text-highlight-blue text-[14px] hover:underline"
+                  className="text-interactive-blue text-[13px] font-bold hover:underline"
                 >
-                  Reset
+                  Reset All
                 </button>
               </div>
 
               <div className="space-y-6">
                 <div>
-                  <label className="block text-[14px] font-medium text-ghost-white mb-2">
+                  <label className="block text-[13px] font-bold text-ghost-white mb-2 uppercase tracking-wider">
                     Category
                   </label>
-                  <select
-                    name="category"
-                    value={filters.category}
-                    onChange={handleFilterChange}
-                    className="w-full px-4 py-3 bg-pitch-black text-ghost-white border-none rounded-inputs focus:ring-2 focus:ring-interactive-blue outline-none appearance-none cursor-pointer"
-                  >
-                    <option value="">All Categories</option>
-                    <option value="sedan">Sedan</option>
-                    <option value="suv">SUV</option>
-                    <option value="hatchback">Hatchback</option>
-                    <option value="luxury">Luxury</option>
-                    <option value="sports">Sports</option>
-                  </select>
+                  <div className="relative">
+                    <select
+                      name="category"
+                      value={filters.category}
+                      onChange={handleFilterChange}
+                      className="w-full px-5 py-3.5 bg-space-gray text-cloud-white border border-deep-graphite rounded-xl focus:ring-2 focus:ring-interactive-blue outline-none appearance-none cursor-pointer font-medium text-[14px]"
+                    >
+                      <option value="">All Categories</option>
+                      <option value="sedan">Sedan</option>
+                      <option value="suv">SUV</option>
+                      <option value="hatchback">Hatchback</option>
+                      <option value="luxury">Luxury</option>
+                      <option value="sports">Sports</option>
+                    </select>
+                    <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-cool-gray pointer-events-none" />
+                  </div>
                 </div>
 
                 <div>
-                  <label className="block text-[14px] font-medium text-ghost-white mb-2">
+                  <label className="block text-[13px] font-bold text-ghost-white mb-2 uppercase tracking-wider">
                     Transmission
                   </label>
-                  <select
-                    name="transmission"
-                    value={filters.transmission}
-                    onChange={handleFilterChange}
-                    className="w-full px-4 py-3 bg-pitch-black text-ghost-white border-none rounded-inputs focus:ring-2 focus:ring-interactive-blue outline-none appearance-none cursor-pointer"
-                  >
-                    <option value="">All Types</option>
-                    <option value="manual">Manual</option>
-                    <option value="automatic">Automatic</option>
-                  </select>
+                  <div className="relative">
+                    <select
+                      name="transmission"
+                      value={filters.transmission}
+                      onChange={handleFilterChange}
+                      className="w-full px-5 py-3.5 bg-space-gray text-cloud-white border border-deep-graphite rounded-xl focus:ring-2 focus:ring-interactive-blue outline-none appearance-none cursor-pointer font-medium text-[14px]"
+                    >
+                      <option value="">All Types</option>
+                      <option value="manual">Manual</option>
+                      <option value="automatic">Automatic</option>
+                    </select>
+                    <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-cool-gray pointer-events-none" />
+                  </div>
                 </div>
 
                 <div>
-                  <label className="block text-[14px] font-medium text-ghost-white mb-2">
-                    Price Range
+                  <label className="block text-[13px] font-bold text-ghost-white mb-2 uppercase tracking-wider">
+                    Price Range (₹)
                   </label>
                   <div className="grid grid-cols-2 gap-3">
                     <input
@@ -150,7 +171,7 @@ export default function CarsPage() {
                       placeholder="Min"
                       value={filters.minPrice}
                       onChange={handleFilterChange}
-                      className="w-full px-4 py-3 bg-pitch-black text-ghost-white border-none rounded-inputs focus:ring-2 focus:ring-interactive-blue outline-none placeholder-cool-gray"
+                      className="w-full px-5 py-3.5 bg-space-gray text-cloud-white border border-deep-graphite rounded-xl focus:ring-2 focus:ring-interactive-blue outline-none placeholder-cool-gray text-[14px] font-medium"
                     />
                     <input
                       type="number"
@@ -158,24 +179,33 @@ export default function CarsPage() {
                       placeholder="Max"
                       value={filters.maxPrice}
                       onChange={handleFilterChange}
-                      className="w-full px-4 py-3 bg-pitch-black text-ghost-white border-none rounded-inputs focus:ring-2 focus:ring-interactive-blue outline-none placeholder-cool-gray"
+                      className="w-full px-5 py-3.5 bg-space-gray text-cloud-white border border-deep-graphite rounded-xl focus:ring-2 focus:ring-interactive-blue outline-none placeholder-cool-gray text-[14px] font-medium"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-[14px] font-medium text-ghost-white mb-2">
+                  <label className="block text-[13px] font-bold text-ghost-white mb-2 uppercase tracking-wider">
                     Location
                   </label>
                   <input
                     type="text"
                     name="location"
-                    placeholder="Enter location"
+                    placeholder="Enter city"
                     value={filters.location}
                     onChange={handleFilterChange}
-                    className="w-full px-4 py-3 bg-pitch-black text-ghost-white border-none rounded-inputs focus:ring-2 focus:ring-interactive-blue outline-none placeholder-cool-gray"
+                    className="w-full px-5 py-3.5 bg-space-gray text-cloud-white border border-deep-graphite rounded-xl focus:ring-2 focus:ring-interactive-blue outline-none placeholder-cool-gray text-[14px] font-medium"
                   />
                 </div>
+
+                {showMobileFilters && (
+                  <button 
+                    onClick={() => setShowMobileFilters(false)}
+                    className="w-full lg:hidden bg-interactive-blue text-white py-4 rounded-buttons font-bold shadow-lg shadow-interactive-blue/20"
+                  >
+                    Apply Filters
+                  </button>
+                )}
               </div>
             </div>
           </motion.div>

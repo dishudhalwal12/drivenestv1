@@ -8,10 +8,13 @@ import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 export default function Home() {
   const router = useRouter();
   const [searchParams, setSearchParams] = useState({
-    location: 'delhi',
-    pickupDate: '11 may 2026',
-    returnDate: '13 may 2006'
+    location: '',
+    pickupDate: '',
+    returnDate: ''
   });
+  const [showLocationDropdown, setShowLocationDropdown] = useState(false);
+  const [locations, setLocations] = useState(['Delhi', 'Mumbai', 'Bangalore', 'Pune', 'Chennai', 'Kolkata', 'Hyderabad']);
+  const [filteredLocations, setFilteredLocations] = useState([]);
 
   const [selectedBrand, setSelectedBrand] = useState('All Brands');
   const [dbCars, setDbCars] = useState([]);
@@ -26,6 +29,9 @@ export default function Home() {
         const data = await res.json();
         if (data.success) {
           setDbCars(data.cars);
+          // Extract unique locations from cars
+          const uniqueLocations = [...new Set(data.cars.map(car => car.location))];
+          if (uniqueLocations.length > 0) setLocations(uniqueLocations);
         }
       } catch (err) {
         console.error("Error fetching cars:", err);
@@ -60,10 +66,28 @@ export default function Home() {
   };
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
     setSearchParams({
       ...searchParams,
-      [e.target.name]: e.target.value
+      [name]: value
     });
+
+    if (name === 'location') {
+      if (value.length > 0) {
+        const filtered = locations.filter(loc => 
+          loc.toLowerCase().startsWith(value.toLowerCase())
+        );
+        setFilteredLocations(filtered);
+        setShowLocationDropdown(true);
+      } else {
+        setShowLocationDropdown(false);
+      }
+    }
+  };
+
+  const selectLocation = (loc) => {
+    setSearchParams({ ...searchParams, location: loc });
+    setShowLocationDropdown(false);
   };
 
   return (
@@ -78,10 +102,10 @@ export default function Home() {
             transition={{ duration: 0.8 }}
             className="lg:w-1/2 pr-0 lg:pr-12 text-left"
           >
-            <h1 className="text-[56px] font-bold mb-6 text-cloud-white leading-[1.1] tracking-tight">
-              DriveNest: Fast <br/> & Easy Car Rental
+            <h1 className="text-[32px] md:text-[44px] lg:text-[56px] font-bold mb-4 md:mb-6 text-cloud-white leading-[1.1] tracking-tight">
+              DriveNest: Fast <br className="hidden md:block"/> & Easy Car Rental
             </h1>
-            <p className="text-[16px] text-ghost-white mb-10 max-w-md leading-relaxed">
+            <p className="text-[14px] md:text-[16px] text-ghost-white mb-8 md:mb-10 max-w-md leading-relaxed">
               We offer a wide range of vehicles for your needs. Experience a seamless and fast car rental process.
             </p>
             
@@ -90,46 +114,80 @@ export default function Home() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="bg-white p-6 rounded-[20px] shadow-xl inline-block w-full max-w-lg border border-deep-graphite"
+              className="bg-white p-5 md:p-6 rounded-[20px] shadow-xl inline-block w-full max-w-lg border border-deep-graphite"
             >
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label className="block text-[12px] font-bold text-ghost-white mb-1 uppercase tracking-wider">Choose Location</label>
-                  <input 
-                    type="text" 
-                    name="location"
-                    value={searchParams.location}
-                    onChange={handleChange}
-                    placeholder="Select Location" 
-                    className="w-full text-[14px] outline-none text-cloud-white font-medium bg-transparent border-b border-deep-graphite pb-2 placeholder:font-normal placeholder:text-cool-gray focus:border-highlight-blue transition-colors" 
-                  />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4 relative">
+                <div className="relative">
+                  <label className="block text-[11px] font-bold text-ghost-white mb-1 uppercase tracking-wider">Choose Location</label>
+                  <div className="relative">
+                    <input 
+                      type="text" 
+                      name="location"
+                      autoComplete="off"
+                      value={searchParams.location}
+                      onChange={handleChange}
+                      onFocus={() => searchParams.location && setShowLocationDropdown(true)}
+                      placeholder="Select Location" 
+                      className="w-full text-[14px] outline-none text-cloud-white font-medium bg-transparent border-b border-deep-graphite pb-2 placeholder:font-normal placeholder:text-cool-gray focus:border-highlight-blue transition-colors" 
+                    />
+                    <MapPin size={16} className="absolute right-0 top-1 text-cool-gray" />
+                  </div>
+                  
+                  {/* Autocomplete Dropdown */}
+                  <AnimatePresence>
+                    {showLocationDropdown && filteredLocations.length > 0 && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="absolute z-50 left-0 right-0 mt-1 bg-white border border-deep-graphite rounded-xl shadow-2xl overflow-hidden max-h-48 overflow-y-auto"
+                      >
+                        {filteredLocations.map((loc, i) => (
+                          <div 
+                            key={i}
+                            onClick={() => selectLocation(loc)}
+                            className="px-4 py-3 hover:bg-space-gray cursor-pointer text-cloud-white text-[14px] font-medium border-b border-deep-graphite last:border-0 flex items-center gap-2"
+                          >
+                            <MapPin size={14} className="text-interactive-blue" />
+                            {loc}
+                          </div>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
+
                 <div>
-                  <label className="block text-[12px] font-bold text-ghost-white mb-1 uppercase tracking-wider">Pick-Up Date</label>
-                  <input 
-                    type="text" 
-                    name="pickupDate"
-                    value={searchParams.pickupDate}
-                    onChange={handleChange}
-                    placeholder="11 March 2024" 
-                    className="w-full text-[14px] outline-none text-cloud-white font-medium bg-transparent border-b border-deep-graphite pb-2 placeholder:font-normal placeholder:text-cool-gray focus:border-highlight-blue transition-colors" 
-                  />
+                  <label className="block text-[11px] font-bold text-ghost-white mb-1 uppercase tracking-wider">Pick-Up Date</label>
+                  <div className="relative">
+                    <input 
+                      type="date" 
+                      name="pickupDate"
+                      value={searchParams.pickupDate}
+                      onChange={handleChange}
+                      className="w-full text-[14px] outline-none text-cloud-white font-medium bg-transparent border-b border-deep-graphite pb-2 focus:border-highlight-blue transition-colors appearance-none" 
+                    />
+                    <Calendar size={16} className="absolute right-0 top-1 text-cool-gray pointer-events-none" />
+                  </div>
                 </div>
-                <div className="col-span-2 md:col-span-1">
-                  <label className="block text-[12px] font-bold text-ghost-white mb-1 uppercase tracking-wider">Return Date</label>
-                  <input 
-                    type="text" 
-                    name="returnDate"
-                    value={searchParams.returnDate}
-                    onChange={handleChange}
-                    placeholder="14 March 2024" 
-                    className="w-full text-[14px] outline-none text-cloud-white font-medium bg-transparent border-b border-deep-graphite pb-2 placeholder:font-normal placeholder:text-cool-gray focus:border-highlight-blue transition-colors" 
-                  />
+
+                <div className="sm:col-span-2">
+                  <label className="block text-[11px] font-bold text-ghost-white mb-1 uppercase tracking-wider">Return Date</label>
+                  <div className="relative">
+                    <input 
+                      type="date" 
+                      name="returnDate"
+                      value={searchParams.returnDate}
+                      onChange={handleChange}
+                      className="w-full text-[14px] outline-none text-cloud-white font-medium bg-transparent border-b border-deep-graphite pb-2 focus:border-highlight-blue transition-colors appearance-none" 
+                    />
+                    <Calendar size={16} className="absolute right-0 top-1 text-cool-gray pointer-events-none" />
+                  </div>
                 </div>
               </div>
               <button 
                 onClick={handleSearch}
-                className="w-full bg-interactive-blue text-white py-3 rounded-buttons font-bold hover:bg-vivid-blue transition shadow-md"
+                className="w-full bg-interactive-blue text-white py-3.5 rounded-buttons font-bold hover:bg-vivid-blue transition shadow-md shadow-interactive-blue/20"
               >
                 Search
               </button>
@@ -160,8 +218,8 @@ export default function Home() {
           transition={{ duration: 0.8 }}
           className="max-w-[1000px] mx-auto px-4 sm:px-6 lg:px-8"
         >
-          <h2 className="text-[36px] font-bold text-cloud-white mb-4">How it Work</h2>
-          <p className="text-ghost-white mb-16 max-w-2xl mx-auto">
+          <h2 className="text-[28px] md:text-[36px] font-bold text-cloud-white mb-4">How it Work</h2>
+          <p className="text-ghost-white mb-12 md:mb-16 max-w-2xl mx-auto text-[14px] md:text-[16px]">
             Renting a car has never been easier. Follow these simple steps to get on the road quickly.
           </p>
           
@@ -201,8 +259,8 @@ export default function Home() {
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
           >
-            <h2 className="text-[36px] font-bold text-cloud-white mb-4">Top Rated Rented Cars</h2>
-            <p className="text-ghost-white mb-12 max-w-2xl mx-auto">
+            <h2 className="text-[28px] md:text-[36px] font-bold text-cloud-white mb-4">Top Rated Rented Cars</h2>
+            <p className="text-ghost-white mb-12 max-w-2xl mx-auto text-[14px] md:text-[16px]">
               Explore our most popular vehicles, chosen by customers for their reliability and comfort.
             </p>
           </motion.div>
@@ -253,7 +311,7 @@ export default function Home() {
                 [...filteredCars, ...filteredCars, ...filteredCars].map((car, idx) => (
                   <div 
                     key={`${car._id}-${idx}`}
-                    className="min-w-[350px] bg-white rounded-[20px] p-6 shadow-sm border border-deep-graphite text-left hover:shadow-xl transition group/card"
+                    className="min-w-[280px] md:min-w-[350px] bg-white rounded-[20px] p-5 md:p-6 shadow-sm border border-deep-graphite text-left hover:shadow-xl transition group/card"
                   >
                     <div className="flex justify-between items-start mb-4">
                       <span className="bg-accent-teal/10 text-accent-teal text-[12px] font-bold px-3 py-1 rounded-full uppercase">{car.category}</span>
@@ -300,8 +358,8 @@ export default function Home() {
             transition={{ duration: 0.8 }}
             className="text-center mb-16"
           >
-            <h2 className="text-[36px] font-bold text-cloud-white mb-4">Best Services and Luxuries Cars</h2>
-            <p className="text-ghost-white max-w-2xl mx-auto">
+            <h2 className="text-[28px] md:text-[36px] font-bold text-cloud-white mb-4">Best Services and Luxuries Cars</h2>
+            <p className="text-ghost-white max-w-2xl mx-auto text-[14px] md:text-[16px]">
               We provide exceptional service along with our premium vehicles to ensure your journey is comfortable and hassle-free.
             </p>
           </motion.div>
@@ -358,14 +416,14 @@ export default function Home() {
           transition={{ duration: 0.8 }}
           className="max-w-[1000px] mx-auto px-4 sm:px-6 lg:px-8"
         >
-          <h2 className="text-[36px] font-bold text-cloud-white mb-4">Find DriveNest Branches all Over The World</h2>
-          <p className="text-ghost-white mb-10 max-w-2xl mx-auto">
+          <h2 className="text-[28px] md:text-[36px] font-bold text-cloud-white mb-4">Find DriveNest Branches all Over The World</h2>
+          <p className="text-ghost-white mb-10 max-w-2xl mx-auto text-[14px] md:text-[16px]">
             With locations globally, we make it easy to rent a car wherever you travel.
           </p>
           
-          <div className="flex justify-center max-w-md mx-auto mb-10">
-            <input type="text" placeholder="Search branch location..." className="flex-1 px-6 py-3 rounded-l-buttons border border-deep-graphite outline-none text-[14px]" />
-            <button className="bg-interactive-blue text-white px-8 py-3 rounded-r-buttons font-bold hover:bg-vivid-blue transition">Search</button>
+          <div className="flex flex-col sm:flex-row justify-center max-w-md mx-auto mb-10 gap-3 sm:gap-0">
+            <input type="text" placeholder="Search branch location..." className="flex-1 px-6 py-3 rounded-buttons sm:rounded-r-none border border-deep-graphite outline-none text-[14px]" />
+            <button className="bg-interactive-blue text-white px-8 py-3 rounded-buttons sm:rounded-l-none font-bold hover:bg-vivid-blue transition">Search</button>
           </div>
           
           <motion.div 
@@ -406,8 +464,8 @@ export default function Home() {
       <section className="py-24 bg-white">
         <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-[36px] font-bold text-cloud-white mb-4">What People Say About Us?</h2>
-            <p className="text-ghost-white max-w-2xl mx-auto">
+            <h2 className="text-[28px] md:text-[36px] font-bold text-cloud-white mb-4">What People Say About Us?</h2>
+            <p className="text-ghost-white max-w-2xl mx-auto text-[14px] md:text-[16px]">
               Read reviews from our satisfied customers and discover why they choose us for their car rental needs.
             </p>
           </div>
@@ -462,8 +520,8 @@ export default function Home() {
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
           >
-            <h2 className="text-[36px] font-bold text-cloud-white mb-4">We Rent a Powerful Machines too</h2>
-            <p className="text-ghost-white mb-12 max-w-2xl mx-auto relative z-10">
+            <h2 className="text-[28px] md:text-[36px] font-bold text-cloud-white mb-4">We Rent a Powerful Machines too</h2>
+            <p className="text-ghost-white mb-12 max-w-2xl mx-auto relative z-10 text-[14px] md:text-[16px]">
               For those who crave adventure, we offer a range of powerful off-road vehicles ready to tackle any terrain.
             </p>
           </motion.div>
@@ -499,8 +557,8 @@ export default function Home() {
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
           >
-            <h2 className="text-[36px] font-bold text-cloud-white mb-4">Know More to Choose</h2>
-            <p className="text-ghost-white mb-16 max-w-2xl mx-auto">
+            <h2 className="text-[28px] md:text-[36px] font-bold text-cloud-white mb-4">Know More to Choose</h2>
+            <p className="text-ghost-white mb-12 md:mb-16 max-w-2xl mx-auto text-[14px] md:text-[16px]">
               Read our guides and articles to help you make the best decision for your next rental.
             </p>
           </motion.div>

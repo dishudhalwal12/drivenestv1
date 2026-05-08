@@ -5,24 +5,26 @@ import { MapPin, Phone, Mail } from 'lucide-react';
 
 export default function Footer() {
   return (
-    <footer className="bg-space-gray text-cloud-white pt-20 pb-8 border-t border-deep-graphite">
+    <footer className="bg-space-gray text-cloud-white pt-16 pb-8 border-t border-deep-graphite">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10 md:gap-12">
           {/* Brand */}
           <div className="space-y-4">
-            <Link href="/" className="flex items-center gap-2 text-2xl font-bold text-accent-teal tracking-tighter uppercase mb-6">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-car-front"><path d="m21 8-2 2-1.5-3.7A2 2 0 0 0 15.64 5H8.4a2 2 0 0 0-1.9 1.3L5 10 3 8"/><path d="M7 14h.01"/><path d="M17 14h.01"/><rect width="18" height="8" x="3" y="10" rx="2"/><path d="M5 18v2"/><path d="M19 18v2"/></svg>
-              DriveNest
+            <Link href="/" className="flex items-center gap-2 text-xl font-bold text-interactive-blue tracking-tighter uppercase">
+              <div className="bg-interactive-blue text-white p-1.5 rounded-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-car-front"><path d="m21 8-2 2-1.5-3.7A2 2 0 0 0 15.64 5H8.4a2 2 0 0 0-1.9 1.3L5 10 3 8"/><path d="M7 14h.01"/><path d="M17 14h.01"/><rect width="18" height="8" x="3" y="10" rx="2"/><path d="M5 18v2"/><path d="M19 18v2"/></svg>
+              </div>
+              <span className="text-cloud-white">DriveNest</span>
             </Link>
-            <p className="text-cool-gray text-[14px] leading-relaxed">
+            <p className="text-ghost-white text-[13px] leading-relaxed max-w-xs">
               We provide the best cars for your journey. Enjoy our wide selection of vehicles ranging from comfortable sedans to luxurious SUVs at competitive prices.
             </p>
           </div>
 
           {/* Quick Info */}
           <div>
-            <h4 className="text-[16px] font-bold mb-6 text-cloud-white">Quick Info</h4>
-            <ul className="space-y-4 text-[14px]">
+            <h4 className="text-[15px] font-bold mb-4 text-cloud-white">Quick Info</h4>
+            <ul className="space-y-3 text-[13px]">
               <li className="flex items-start gap-3 text-cool-gray">
                 <MapPin className="w-5 h-5 text-highlight-blue shrink-0" />
                 <span>123 Car Street, Auto City,<br />AC 12345</span>
@@ -40,8 +42,8 @@ export default function Footer() {
 
           {/* Customer Care */}
           <div>
-            <h4 className="text-[16px] font-bold mb-6 text-cloud-white">Customer Care</h4>
-            <ul className="space-y-3 text-[14px]">
+            <h4 className="text-[15px] font-bold mb-4 text-cloud-white">Customer Care</h4>
+            <ul className="space-y-2 text-[13px]">
               <li><Link href="/about" className="text-cool-gray hover:text-highlight-blue transition">About Us</Link></li>
               <li><Link href="/cars" className="text-cool-gray hover:text-highlight-blue transition">Our Cars</Link></li>
               <li><Link href="/faq" className="text-cool-gray hover:text-highlight-blue transition">FAQ</Link></li>
@@ -53,17 +55,17 @@ export default function Footer() {
           {/* Newsletter */}
           <div>
             <h4 className="text-[16px] font-bold mb-6 text-cloud-white">Subscribe To Newsletter</h4>
-            <form className="flex mt-4" onSubmit={(e) => e.preventDefault()}>
+            <form className="flex mt-6 group" onSubmit={(e) => e.preventDefault()}>
               <input 
                 type="email" 
                 placeholder="Enter Email" 
-                className="bg-white border border-deep-graphite px-4 py-2 rounded-l-buttons outline-none w-full text-cloud-white placeholder:text-cool-gray text-sm"
+                className="bg-white border border-deep-graphite px-5 py-3 rounded-l-buttons outline-none w-full text-cloud-white placeholder:text-cool-gray text-sm focus:border-interactive-blue transition"
               />
               <button 
                 type="submit" 
-                className="bg-interactive-blue hover:bg-vivid-blue text-white px-6 py-2 rounded-r-buttons font-semibold transition text-sm whitespace-nowrap"
+                className="bg-interactive-blue hover:bg-vivid-blue text-white px-8 py-3 rounded-r-buttons font-bold transition text-sm whitespace-nowrap shadow-md shadow-interactive-blue/10"
               >
-                Send
+                Join
               </button>
             </form>
           </div>

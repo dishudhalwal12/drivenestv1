@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { Calendar, MapPin, ShieldCheck, Info, CreditCard } from 'lucide-react';
 
 export default function BookingForm({ car, userId, selectedDriver }) {
   const router = useRouter();
@@ -183,7 +184,7 @@ export default function BookingForm({ car, userId, selectedDriver }) {
           contact: '',
         },
         theme: {
-          color: '#2563eb',
+          color: '#f97316', // Orange theme
         },
         modal: {
           ondismiss: function () {
@@ -208,136 +209,130 @@ export default function BookingForm({ car, userId, selectedDriver }) {
   const today = new Date().toISOString().split('T')[0];
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6 sticky top-4">
-      <h3 className="text-2xl font-bold mb-6">Book This Car</h3>
+    <div className="bg-white rounded-[40px] border border-deep-graphite shadow-2xl p-8 md:p-10">
+      <h3 className="text-[24px] font-black text-cloud-white uppercase tracking-tighter mb-8 flex items-center gap-3">
+        <CreditCard size={24} className="text-interactive-blue" /> Secure Booking
+      </h3>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Start Date
-          </label>
-          <input
-            type="date"
-            name="startDate"
-            value={formData.startDate}
-            onChange={handleInputChange}
-            min={today}
-            required
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-1 gap-6">
+          <div className="space-y-2">
+            <label className="block text-[11px] font-bold text-ghost-white uppercase tracking-widest">
+              Start Date
+            </label>
+            <div className="relative">
+              <input
+                type="date"
+                name="startDate"
+                value={formData.startDate}
+                onChange={handleInputChange}
+                min={today}
+                required
+                className="w-full bg-space-gray border border-deep-graphite px-5 py-4 rounded-2xl outline-none text-cloud-white font-bold text-[14px] focus:border-interactive-blue transition appearance-none"
+              />
+              <Calendar size={18} className="absolute right-5 top-1/2 -translate-y-1/2 text-ghost-white pointer-events-none" />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-[11px] font-bold text-ghost-white uppercase tracking-widest">
+              End Date
+            </label>
+            <div className="relative">
+              <input
+                type="date"
+                name="endDate"
+                value={formData.endDate}
+                onChange={handleInputChange}
+                min={formData.startDate || today}
+                required
+                className="w-full bg-space-gray border border-deep-graphite px-5 py-4 rounded-2xl outline-none text-cloud-white font-bold text-[14px] focus:border-interactive-blue transition appearance-none"
+              />
+              <Calendar size={18} className="absolute right-5 top-1/2 -translate-y-1/2 text-ghost-white pointer-events-none" />
+            </div>
+          </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            End Date
+        <div className="space-y-2">
+          <label className="block text-[11px] font-bold text-ghost-white uppercase tracking-widest">
+            Pickup Point
           </label>
-          <input
-            type="date"
-            name="endDate"
-            value={formData.endDate}
-            onChange={handleInputChange}
-            min={formData.startDate || today}
-            required
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
+          <div className="relative">
+            <input
+              type="text"
+              name="pickupLocation"
+              value={formData.pickupLocation}
+              onChange={handleInputChange}
+              placeholder="Enter pickup address"
+              required
+              className="w-full bg-space-gray border border-deep-graphite px-5 py-4 rounded-2xl outline-none text-cloud-white font-bold text-[14px] focus:border-interactive-blue transition"
+            />
+            <MapPin size={18} className="absolute right-5 top-1/2 -translate-y-1/2 text-ghost-white pointer-events-none" />
+          </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Pickup Location
+        <div className="space-y-2">
+          <label className="block text-[11px] font-bold text-ghost-white uppercase tracking-widest">
+            Drop-off Point
           </label>
-          <input
-            type="text"
-            name="pickupLocation"
-            value={formData.pickupLocation}
-            onChange={handleInputChange}
-            required
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Drop-off Location
-          </label>
-          <input
-            type="text"
-            name="dropoffLocation"
-            value={formData.dropoffLocation}
-            onChange={handleInputChange}
-            required
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
+          <div className="relative">
+            <input
+              type="text"
+              name="dropoffLocation"
+              value={formData.dropoffLocation}
+              onChange={handleInputChange}
+              placeholder="Enter drop-off address"
+              required
+              className="w-full bg-space-gray border border-deep-graphite px-5 py-4 rounded-2xl outline-none text-cloud-white font-bold text-[14px] focus:border-interactive-blue transition"
+            />
+            <MapPin size={18} className="absolute right-5 top-1/2 -translate-y-1/2 text-ghost-white pointer-events-none" />
+          </div>
         </div>
 
         {/* Price Breakdown */}
         {totalDays > 0 && (
-          <div className="border-t pt-4 mt-4">
-            <div className="space-y-2">
-              <div className="flex justify-between text-gray-700">
-                <span>Car ({totalDays} days × ₹{car.pricePerDay})</span>
-                <span>₹{carPrice.toFixed(2)}</span>
-              </div>
+          <div className="bg-space-gray rounded-3xl p-6 border border-deep-graphite space-y-4">
+            <div className="flex justify-between text-[14px] font-bold text-ghost-white uppercase tracking-wider">
+              <span>Car ({totalDays} Days)</span>
+              <span className="text-cloud-white">₹{carPrice.toFixed(0)}</span>
+            </div>
 
-              {selectedDriver && driverPrice > 0 && (
-                <>
-                  <div className="flex justify-between text-gray-700">
-                    <span>Driver ({selectedDriver.name})</span>
-                    <span>₹{driverPrice.toFixed(2)}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-gray-500 bg-green-50 p-2 rounded">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span>Driver will be assigned to this car for the booking duration</span>
-                  </div>
-                </>
-              )}
-
-              {/* Insurance/Security Deposit */}
-              <div className="border-t pt-2 mt-2">
-                <div className="flex justify-between text-gray-700 font-medium">
-                  <div className="flex items-center gap-1">
-                    <span>Security Deposit</span>
-                    <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    </svg>
-                  </div>
-                  <span>₹{insurancePrice.toFixed(2)}</span>
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  10% refundable deposit (covers damages)
-                </p>
+            {selectedDriver && driverPrice > 0 && (
+              <div className="flex justify-between text-[14px] font-bold text-ghost-white uppercase tracking-wider">
+                <span>Pilot ({selectedDriver.name})</span>
+                <span className="text-cloud-white">₹{driverPrice.toFixed(0)}</span>
               </div>
+            )}
 
-              <div className="flex justify-between font-bold text-lg pt-2 border-t">
-                <span>Total Amount</span>
-                <span className="text-blue-600">₹{totalPrice.toFixed(2)}</span>
-              </div>
+            <div className="flex justify-between text-[14px] font-bold text-ghost-white uppercase tracking-wider">
+              <span>Security Deposit (10%)</span>
+              <span className="text-cloud-white">₹{insurancePrice.toFixed(0)}</span>
+            </div>
+
+            <div className="pt-4 border-t border-deep-graphite flex justify-between items-end">
+              <span className="text-[12px] font-black text-ghost-white uppercase tracking-widest">Total Amount</span>
+              <span className="text-[28px] font-black text-interactive-blue leading-none">₹{totalPrice.toFixed(0)}</span>
             </div>
           </div>
         )}
 
-        {/* Mandatory Insurance Checkbox */}
+        {/* Security Deposit Acceptance */}
         {totalDays > 0 && (
-          <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4 mt-4">
-            <div className="flex items-start gap-3">
+          <div className={`p-5 rounded-3xl border-2 transition-all ${insuranceAccepted ? 'bg-accent-teal/5 border-accent-teal/30' : 'bg-red-50 border-red-200'}`}>
+            <div className="flex items-start gap-4">
               <input
                 type="checkbox"
                 id="insuranceAccept"
                 checked={insuranceAccepted}
                 onChange={(e) => setInsuranceAccepted(e.target.checked)}
                 required
-                className="mt-1 w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                className="mt-1 w-5 h-5 rounded border-deep-graphite text-interactive-blue focus:ring-interactive-blue"
               />
-              <label htmlFor="insuranceAccept" className="text-sm text-gray-700 cursor-pointer">
-                <span className="font-semibold text-gray-900">I accept the Security Deposit (Insurance) *</span>
-                <div className="mt-2 space-y-1 text-xs">
-                  <p>✓ Covers accidental damage to the vehicle</p>
-                  <p>✓ <span className="font-semibold">Fully refundable</span> after vehicle inspection</p>
-                  <p>✓ One-time fee of ₹{insurancePrice.toFixed(2)} (10% of booking amount)</p>
-                  <p>✓ Refund processed within 7 business days after rental completion</p>
-                </div>
+              <label htmlFor="insuranceAccept" className="text-[13px] font-bold text-cloud-white cursor-pointer select-none">
+                I accept the mandatory Security Deposit (Insurance)
+                <p className="mt-2 text-[11px] font-medium text-ghost-white leading-relaxed">
+                  Deposit of <span className="text-cloud-white font-bold">₹{insurancePrice.toFixed(0)}</span> is fully refundable after vehicle inspection.
+                </p>
               </label>
             </div>
           </div>
@@ -346,25 +341,22 @@ export default function BookingForm({ car, userId, selectedDriver }) {
         <button
           type="submit"
           disabled={loading || totalDays <= 0 || !insuranceAccepted}
-          className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+          className="w-full bg-interactive-blue text-white py-5 rounded-buttons font-black uppercase tracking-widest hover:bg-vivid-blue transition disabled:bg-deep-graphite disabled:text-ghost-white disabled:cursor-not-allowed shadow-xl shadow-interactive-blue/10 text-[14px]"
         >
-          {loading ? 'Processing...' : 'Proceed to Payment'}
+          {loading ? 'Securing Machine...' : 'Confirm & Pay'}
         </button>
 
         {totalDays > 0 && !insuranceAccepted && (
-          <p className="text-xs text-red-600 text-center">
-            Please accept the Security Deposit to proceed
+          <p className="text-[11px] font-bold text-red-500 text-center uppercase tracking-wider">
+             Accept deposit terms to proceed
           </p>
         )}
       </form>
 
-      {selectedDriver && (
-        <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-          <p className="text-xs text-blue-800">
-            <strong>Note:</strong> Your selected driver will be automatically assigned to this car and will remain assigned for the entire booking period.
-          </p>
-        </div>
-      )}
+      <div className="mt-8 flex items-center justify-center gap-4 text-ghost-white opacity-40">
+         <ShieldCheck size={16} />
+         <span className="text-[10px] font-black uppercase tracking-widest">256-bit SSL encrypted</span>
+      </div>
     </div>
   );
 }

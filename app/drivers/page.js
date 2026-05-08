@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { User, ShieldCheck, MapPin, Star, Calendar, Clock, DollarSign, X, ChevronRight, Phone, Mail } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function DriversPage() {
   const { data: session, status } = useSession();
@@ -29,7 +31,6 @@ export default function DriversPage() {
   }, [filter]);
 
   useEffect(() => {
-    // Load Razorpay script
     const script = document.createElement('script');
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
     script.async = true;
@@ -37,7 +38,6 @@ export default function DriversPage() {
   }, []);
 
   useEffect(() => {
-    // Pre-fill customer details if user is logged in
     if (session?.user) {
       setHireFormData(prev => ({
         ...prev,
@@ -54,18 +54,13 @@ export default function DriversPage() {
                         filter !== 'all' ? `?status=${filter}` : '';
       
       const response = await fetch(`/api/drivers${queryParam}`);
-      
       const data = await response.json();
       
       if (data.success) {
         setDrivers(data.data);
-      } else {
-        console.error('API returned error:', data.error);
-        alert('Error: ' + (data.error || 'Failed to fetch drivers'));
       }
     } catch (error) {
       console.error('Error fetching drivers:', error);
-      alert('Failed to fetch drivers: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -73,7 +68,7 @@ export default function DriversPage() {
 
   const handleHireClick = (driver) => {
     if (status === 'unauthenticated') {
-      router.push('/api/auth/signin');
+      router.push('/auth/signin');
       return;
     }
     setSelectedDriver(driver);
@@ -87,24 +82,14 @@ export default function DriversPage() {
     const { duration, durationType } = hireFormData;
     
     let multiplier = 1;
-    
-    // Convert duration to days for calculation
-    if (durationType === 'weeks') {
-      multiplier = 7;
-    } else if (durationType === 'months') {
-      multiplier = 30;
-    }
+    if (durationType === 'weeks') multiplier = 7;
+    else if (durationType === 'months') multiplier = 30;
     
     const totalDays = duration * multiplier;
     
-    // Calculate based on payment frequency
-    if (paymentFrequency === 'daily') {
-      return amount * totalDays;
-    } else if (paymentFrequency === 'weekly') {
-      return amount * (totalDays / 7);
-    } else { // monthly
-      return amount * (totalDays / 30);
-    }
+    if (paymentFrequency === 'daily') return amount * totalDays;
+    if (paymentFrequency === 'weekly') return amount * (totalDays / 7);
+    return amount * (totalDays / 30);
   };
 
   const handlePayment = async () => {
@@ -119,19 +104,9 @@ export default function DriversPage() {
     
     try {
       const totalAmount = calculateTotalAmount();
-      
-      console.log('Creating payment order...', {
-        amount: totalAmount,
-        driverId: selectedDriver._id,
-        hireDetails: hireFormData
-      });
-      
-      // Create order on backend
       const orderResponse = await fetch('/api/payment/driver/create-order', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           amount: totalAmount,
           driverId: selectedDriver._id,
@@ -139,43 +114,21 @@ export default function DriversPage() {
         }),
       });
       
-      console.log('Order response status:', orderResponse.status);
-      
-      if (!orderResponse.ok) {
-        const errorText = await orderResponse.text();
-        console.error('Order response error:', errorText);
-        throw new Error(`HTTP error! status: ${orderResponse.status}`);
-      }
-      
       const orderData = await orderResponse.json();
-      console.log('Order data received:', orderData);
-      
-      if (!orderData.success) {
-        throw new Error(orderData.error || orderData.details || 'Failed to create order');
-      }
+      if (!orderData.success) throw new Error(orderData.error || 'Failed to create order');
 
-      // Check if Razorpay is loaded
-      if (typeof window.Razorpay === 'undefined') {
-        throw new Error('Razorpay SDK not loaded. Please refresh the page.');
-      }
-      
-      // Initialize Razorpay
       const options = {
         key: orderData.razorpayKeyId,
         amount: orderData.amount,
         currency: 'INR',
-        name: 'Driver Hiring Service',
+        name: 'Drivenest - Pilot Roster',
         description: `Hire ${selectedDriver.name} for ${hireFormData.duration} ${hireFormData.durationType}`,
         order_id: orderData.orderId,
         handler: async function (response) {
           try {
-            console.log('Payment successful, verifying...');
-            // Verify payment on backend
             const verifyResponse = await fetch('/api/payment/driver/verify', {
               method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
+              headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
@@ -186,21 +139,14 @@ export default function DriversPage() {
             });
             
             const verifyData = await verifyResponse.json();
-            console.log('Verification response:', verifyData);
-            
             if (verifyData.success) {
-              alert('Payment successful! Driver hired successfully!');
+              alert('Pilot hired successfully!');
               setShowHireModal(false);
               fetchDrivers();
-              resetHireForm();
-              // Redirect to bookings page
               router.push('/bookings');
-            } else {
-              alert('Payment verification failed: ' + (verifyData.error || verifyData.details || 'Unknown error'));
             }
-          } catch (verifyError) {
-            console.error('Verification error:', verifyError);
-            alert('Payment verification failed: ' + verifyError.message);
+          } catch (error) {
+            alert('Verification failed: ' + error.message);
           } finally {
             setProcessingPayment(false);
           }
@@ -210,338 +156,292 @@ export default function DriversPage() {
           email: hireFormData.customerEmail,
           contact: hireFormData.customerPhone
         },
-        theme: {
-          color: '#2563eb'
-        },
-        modal: {
-          ondismiss: function() {
-            setProcessingPayment(false);
-          }
-        }
+        theme: { color: '#f97316' },
+        modal: { ondismiss: () => setProcessingPayment(false) }
       };
       
       const rzp = new window.Razorpay(options);
-      rzp.on('payment.failed', function (response) {
-        console.error('Payment failed:', response.error);
-        alert('Payment failed: ' + response.error.description);
-        setProcessingPayment(false);
-      });
-      
       rzp.open();
     } catch (error) {
-      console.error('Error processing payment:', error);
-      alert('Failed to process payment: ' + error.message);
+      alert('Payment failed: ' + error.message);
       setProcessingPayment(false);
     }
   };
 
-  const resetHireForm = () => {
-    setHireFormData({
-      startDate: '',
-      duration: '',
-      durationType: 'days',
-      carId: '',
-      specialRequirements: '',
-      customerName: session?.user?.name || '',
-      customerEmail: session?.user?.email || '',
-      customerPhone: ''
-    });
-    setSelectedDriver(null);
-    setProcessingPayment(false);
-  };
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setHireFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const closeModal = () => {
-    setShowHireModal(false);
-    resetHireForm();
+    setHireFormData(prev => ({ ...prev, [name]: value }));
   };
 
   return (
-    <div className="min-h-screen bg-pitch-black">  
-      <main className="container mx-auto px-4 py-8 mt-20">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-4xl font-bold text-cloud-white">Hire a Driver</h1>
-            <p className="text-ghost-white mt-2">Browse and hire professional drivers for your needs</p>
-          </div>
+    <div className="bg-white min-h-screen pb-24">
+      {/* Hero Header */}
+      <div className="bg-pitch-black pt-28 pb-20 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?q=80&w=2070')] bg-cover bg-center opacity-20"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-pitch-black"></div>
+        
+        <div className="max-w-[1200px] mx-auto px-4 relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <h1 className="text-[48px] md:text-[64px] font-black text-cloud-white leading-tight uppercase tracking-tighter mb-4">
+              Professional <span className="text-interactive-blue">Pilots</span>
+            </h1>
+            <p className="text-ghost-white text-[16px] md:text-[18px] max-w-2xl font-medium leading-relaxed">
+              Experience the luxury of being driven. Our professional pilots are verified, experienced, and ready to take the wheel while you focus on your journey.
+            </p>
+          </motion.div>
+        </div>
+      </div>
+
+      <main className="max-w-[1200px] mx-auto px-4 -mt-12 relative z-20">
+        {/* Filter Section */}
+        <div className="bg-white p-6 rounded-[32px] border border-deep-graphite shadow-2xl mb-10 flex flex-wrap gap-3">
+          {[
+            { id: 'available', label: 'Ready for Duty' },
+            { id: 'all', label: 'All Pilots' },
+            { id: 'active', label: 'Currently Active' }
+          ].map((btn) => (
+            <button
+              key={btn.id}
+              onClick={() => setFilter(btn.id)}
+              className={`px-6 py-3 rounded-full font-bold text-[13px] uppercase tracking-wider transition-all ${
+                filter === btn.id 
+                ? 'bg-interactive-blue text-white shadow-lg shadow-interactive-blue/20' 
+                : 'bg-space-gray text-ghost-white border border-deep-graphite hover:border-interactive-blue'
+              }`}
+            >
+              {btn.label}
+            </button>
+          ))}
         </div>
 
-        {/* Filter Options */}
-        <div className="mb-6 flex gap-4">
-          <button
-            onClick={() => setFilter('available')}
-            className={`px-4 py-2 rounded-lg transition font-semibold ${filter === 'available' ? 'bg-interactive-blue text-white shadow-md' : 'bg-white text-ghost-white border border-deep-graphite hover:border-interactive-blue hover:text-interactive-blue'}`}
-          >
-            Available Drivers
-          </button>
-          <button
-            onClick={() => setFilter('all')}
-            className={`px-4 py-2 rounded-lg transition font-semibold ${filter === 'all' ? 'bg-interactive-blue text-white shadow-md' : 'bg-white text-ghost-white border border-deep-graphite hover:border-interactive-blue hover:text-interactive-blue'}`}
-          >
-            All Drivers
-          </button>
-          <button
-            onClick={() => setFilter('active')}
-            className={`px-4 py-2 rounded-lg transition font-semibold ${filter === 'active' ? 'bg-interactive-blue text-white shadow-md' : 'bg-white text-ghost-white border border-deep-graphite hover:border-interactive-blue hover:text-interactive-blue'}`}
-          >
-            Active
-          </button>
-        </div>
-
-        {/* Drivers List */}
+        {/* Drivers Grid */}
         {loading ? (
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-interactive-blue"></div>
-            <p className="mt-4 text-ghost-white">Loading drivers...</p>
+          <div className="flex flex-col items-center justify-center py-24">
+            <div className="w-12 h-12 border-4 border-interactive-blue/20 border-t-interactive-blue rounded-full animate-spin mb-4"></div>
+            <p className="text-ghost-white font-bold uppercase tracking-widest text-[12px]">Scanning Roster...</p>
           </div>
         ) : drivers.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-lg border border-deep-graphite">
-            <p className="text-ghost-white text-lg">No drivers available at the moment</p>
+          <div className="bg-space-gray rounded-[40px] border border-deep-graphite p-20 text-center">
+            <User size={64} className="mx-auto text-cool-gray mb-6 opacity-20" />
+            <p className="text-[20px] text-cloud-white font-bold mb-2">No pilots found</p>
+            <p className="text-ghost-white text-[14px]">Try adjusting your search filters to find available pilots.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {drivers.map((driver) => (
-              <div key={driver._id} className="bg-white rounded-[20px] shadow-sm border border-deep-graphite overflow-hidden hover:shadow-xl transition">
-                <div className="p-6">
-                  <div className="flex items-center mb-4">
-                    <img
-                      src={driver.photo || '/images/default-driver.png'}
-                      alt={driver.name}
-                      className="w-20 h-20 rounded-full object-cover mr-4"
-                      onError={(e) => { e.target.src = '/images/default-driver.png'; }}
-                    />
-                    <div>
-                      <h3 className="text-xl font-bold text-cloud-white">{driver.name}</h3>
-                      <span className={`inline-block px-3 py-1 rounded-full text-sm ${
-                        driver.status === 'active' ? 'bg-accent-teal/10 text-accent-teal' :
-                        driver.status === 'inactive' ? 'bg-red-100 text-red-800' :
-                        'bg-yellow-100 text-yellow-800'
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {drivers.map((driver, idx) => (
+              <motion.div
+                key={driver._id}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: idx * 0.05 }}
+                className="bg-white rounded-[40px] border border-deep-graphite overflow-hidden hover:border-interactive-blue transition-all group shadow-sm hover:shadow-2xl"
+              >
+                <div className="relative h-48 bg-space-gray overflow-hidden">
+                   <img
+                     src={driver.photo || 'https://i.pravatar.cc/150?u=pilot'}
+                     alt={driver.name}
+                     className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
+                     onError={(e) => { e.target.src = 'https://i.pravatar.cc/150?u=pilot'; }}
+                   />
+                   <div className="absolute inset-0 bg-gradient-to-t from-pitch-black/80 to-transparent"></div>
+                   <div className="absolute bottom-4 left-6">
+                      <div className="flex items-center gap-2 mb-1">
+                         <span className="bg-interactive-blue text-white text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-widest">
+                           {driver.licenceDetails.licenceType}
+                         </span>
+                         {driver.experience && (
+                           <span className="bg-white/10 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded border border-white/20 uppercase">
+                             {driver.experience} Yrs Exp
+                           </span>
+                         )}
+                      </div>
+                      <h3 className="text-[22px] font-black text-cloud-white uppercase tracking-tighter">{driver.name}</h3>
+                   </div>
+                   <div className="absolute top-4 right-6">
+                      <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${
+                        driver.status === 'active' ? 'bg-accent-teal/10 text-accent-teal border-accent-teal/30' : 'bg-red-500/10 text-red-500 border-red-500/30'
                       }`}>
-                        {driver.status}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2 text-sm text-ghost-white">
-                    <p><strong className="text-cloud-white">Email:</strong> {driver.email}</p>
-                    <p><strong className="text-cloud-white">Contact:</strong> {driver.contactNumber}</p>
-                    <p><strong className="text-cloud-white">Licence:</strong> {driver.licenceDetails.licenceNumber}</p>
-                    <p><strong className="text-cloud-white">Type:</strong> {driver.licenceDetails.licenceType}</p>
-                    <p><strong className="text-cloud-white">Rate:</strong> ₹{driver.salary.amount} / {driver.salary.paymentFrequency}</p>
-                    {driver.experience && <p><strong className="text-cloud-white">Experience:</strong> {driver.experience} years</p>}
-                    {driver.assignedCar ? (
-                      <p className="text-amber-600"><strong>Currently Assigned:</strong> {driver.assignedCar.make} {driver.assignedCar.model}</p>
-                    ) : (
-                      <p className="text-accent-teal font-medium">Available for hire</p>
-                    )}
-                  </div>
-
-                  <div className="mt-6">
-                    <button
-                      onClick={() => handleHireClick(driver)}
-                      disabled={driver.status !== 'active'}
-                      className={`w-full py-3 rounded-buttons font-bold transition ${
-                        driver.status === 'active'
-                          ? 'bg-interactive-blue text-white hover:bg-vivid-blue shadow-md'
-                          : 'bg-deep-graphite text-cool-gray cursor-not-allowed'
-                      }`}
-                    >
-                      {driver.status === 'active' ? 'Hire Driver' : 'Not Available'}
-                    </button>
-                  </div>
+                        {driver.status === 'active' ? 'Available' : 'Busy'}
+                      </div>
+                   </div>
                 </div>
-              </div>
+
+                <div className="p-8 space-y-6">
+                   <div className="grid grid-cols-2 gap-4 pb-6 border-b border-deep-graphite">
+                      <div className="space-y-1">
+                         <div className="text-[10px] font-bold text-ghost-white uppercase tracking-wider">Salary Rate</div>
+                         <div className="text-[18px] font-black text-interactive-blue">₹{driver.salary.amount}<span className="text-[11px] font-medium text-ghost-white lowercase">/{driver.salary.paymentFrequency}</span></div>
+                      </div>
+                      <div className="space-y-1 text-right">
+                         <div className="text-[10px] font-bold text-ghost-white uppercase tracking-wider">License</div>
+                         <div className="text-[14px] font-bold text-cloud-white truncate">{driver.licenceDetails.licenceNumber}</div>
+                      </div>
+                   </div>
+
+                   <div className="space-y-3">
+                      <div className="flex items-center gap-3 text-[13px] font-medium text-ghost-white">
+                         <Phone size={14} className="text-interactive-blue" /> {driver.contactNumber}
+                      </div>
+                      <div className="flex items-center gap-3 text-[13px] font-medium text-ghost-white">
+                         <Mail size={14} className="text-interactive-blue" /> {driver.email}
+                      </div>
+                   </div>
+
+                   <button
+                     onClick={() => handleHireClick(driver)}
+                     disabled={driver.status !== 'active'}
+                     className={`w-full py-4 rounded-buttons font-black text-[13px] uppercase tracking-widest transition-all ${
+                       driver.status === 'active'
+                       ? 'bg-interactive-blue text-white hover:bg-vivid-blue shadow-lg shadow-interactive-blue/20'
+                       : 'bg-space-gray text-cool-gray cursor-not-allowed border border-deep-graphite'
+                     }`}
+                   >
+                     {driver.status === 'active' ? 'Engage Pilot' : 'Currently On Duty'}
+                   </button>
+                </div>
+              </motion.div>
             ))}
           </div>
         )}
 
         {/* Hire Modal */}
-        {showHireModal && selectedDriver && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold">Hire {selectedDriver.name}</h2>
-                  <button
-                    onClick={closeModal}
-                    className="text-gray-500 hover:text-gray-700 text-2xl"
+        <AnimatePresence>
+          {showHireModal && selectedDriver && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-pitch-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4 overflow-y-auto"
+            >
+              <motion.div 
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="bg-white rounded-[40px] border border-deep-graphite shadow-3xl max-w-2xl w-full my-auto overflow-hidden"
+              >
+                <div className="p-8 md:p-12 relative">
+                  <button 
+                    onClick={() => setShowHireModal(false)}
+                    className="absolute right-8 top-8 text-ghost-white hover:text-interactive-blue transition"
                   >
-                    ×
+                    <X size={24} />
                   </button>
-                </div>
 
-                {/* Driver Summary */}
-                <div className="bg-space-gray p-6 rounded-[20px] mb-6 border border-deep-graphite">
-                  <div className="flex items-center mb-4">
-                    <img
-                      src={selectedDriver.photo || '/images/default-driver.png'}
-                      alt={selectedDriver.name}
-                      className="w-16 h-16 rounded-full object-cover mr-4"
-                    />
-                    <div>
-                      <h3 className="text-lg font-bold text-cloud-white">{selectedDriver.name}</h3>
-                      <p className="text-sm text-ghost-white">{selectedDriver.licenceDetails.licenceType}</p>
-                      <p className="text-sm text-ghost-white">{selectedDriver.experience} years experience</p>
-                    </div>
+                  <div className="flex items-center gap-6 mb-10 pb-8 border-b border-deep-graphite">
+                     <img
+                       src={selectedDriver.photo || 'https://i.pravatar.cc/150?u=pilot'}
+                       alt={selectedDriver.name}
+                       className="w-24 h-24 rounded-[28px] object-cover border-2 border-interactive-blue"
+                       onError={(e) => { e.target.src = 'https://i.pravatar.cc/150?u=pilot'; }}
+                     />
+                     <div>
+                        <h2 className="text-[28px] font-black text-cloud-white uppercase tracking-tighter leading-none mb-2">Hire {selectedDriver.name}</h2>
+                        <div className="flex items-center gap-3">
+                           <span className="text-[12px] font-bold text-interactive-blue uppercase tracking-widest">{selectedDriver.licenceDetails.licenceType}</span>
+                           <span className="w-1.5 h-1.5 rounded-full bg-deep-graphite"></span>
+                           <span className="text-[12px] font-bold text-ghost-white uppercase tracking-widest">{selectedDriver.experience} Years Exp</span>
+                        </div>
+                     </div>
                   </div>
-                  <p className="text-lg font-bold text-interactive-blue">
-                    Rate: ₹{selectedDriver.salary.amount} / {selectedDriver.salary.paymentFrequency}
-                  </p>
-                </div>
 
-                <div className="space-y-6">
-                  {/* Customer Details */}
-                  <div className="border-b border-deep-graphite pb-6">
-                    <h3 className="text-lg font-bold text-cloud-white mb-4">Your Details</h3>
-                    <div className="grid grid-cols-1 gap-4">
-                      <div>
-                        <label className="block text-sm font-bold text-ghost-white mb-2 uppercase tracking-wider">Name *</label>
-                        <input
-                          type="text"
-                          name="customerName"
-                          value={hireFormData.customerName}
+                  <form className="space-y-8">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="space-y-2">
+                           <label className="text-[11px] font-black text-ghost-white uppercase tracking-widest">Start Date</label>
+                           <div className="relative">
+                              <input
+                                type="date"
+                                name="startDate"
+                                value={hireFormData.startDate}
+                                onChange={handleInputChange}
+                                min={new Date().toISOString().split('T')[0]}
+                                className="w-full bg-space-gray border border-deep-graphite px-5 py-4 rounded-2xl outline-none text-cloud-white font-bold text-[14px] focus:border-interactive-blue transition appearance-none"
+                              />
+                              <Calendar size={18} className="absolute right-5 top-1/2 -translate-y-1/2 text-ghost-white pointer-events-none" />
+                           </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                           <div className="space-y-2">
+                              <label className="text-[11px] font-black text-ghost-white uppercase tracking-widest">Duration</label>
+                              <input
+                                type="number"
+                                name="duration"
+                                value={hireFormData.duration}
+                                onChange={handleInputChange}
+                                min="1"
+                                className="w-full bg-space-gray border border-deep-graphite px-5 py-4 rounded-2xl outline-none text-cloud-white font-bold text-[14px] focus:border-interactive-blue transition"
+                              />
+                           </div>
+                           <div className="space-y-2">
+                              <label className="text-[11px] font-black text-ghost-white uppercase tracking-widest">Unit</label>
+                              <select
+                                name="durationType"
+                                value={hireFormData.durationType}
+                                onChange={handleInputChange}
+                                className="w-full bg-space-gray border border-deep-graphite px-5 py-4 rounded-2xl outline-none text-cloud-white font-bold text-[14px] focus:border-interactive-blue transition appearance-none"
+                              >
+                                <option value="days">Days</option>
+                                <option value="weeks">Weeks</option>
+                                <option value="months">Months</option>
+                              </select>
+                           </div>
+                        </div>
+                     </div>
+
+                     <div className="space-y-2">
+                        <label className="text-[11px] font-black text-ghost-white uppercase tracking-widest">Special Requirements</label>
+                        <textarea
+                          name="specialRequirements"
+                          value={hireFormData.specialRequirements}
                           onChange={handleInputChange}
-                          placeholder="Enter your name"
-                          className="w-full px-4 py-3 bg-storm-gray text-cloud-white border border-deep-graphite rounded-inputs focus:border-interactive-blue outline-none transition"
+                          rows="3"
+                          placeholder="e.g. Needs to know hill driving, night shifts, etc."
+                          className="w-full bg-space-gray border border-deep-graphite px-5 py-4 rounded-2xl outline-none text-cloud-white font-bold text-[14px] focus:border-interactive-blue transition resize-none"
                         />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-bold text-ghost-white mb-2 uppercase tracking-wider">Email *</label>
-                        <input
-                          type="email"
-                          name="customerEmail"
-                          value={hireFormData.customerEmail}
-                          onChange={handleInputChange}
-                          placeholder="Enter your email"
-                          className="w-full px-4 py-3 bg-storm-gray text-cloud-white border border-deep-graphite rounded-inputs focus:border-interactive-blue outline-none transition"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-bold text-ghost-white mb-2 uppercase tracking-wider">Phone *</label>
-                        <input
-                          type="tel"
-                          name="customerPhone"
-                          value={hireFormData.customerPhone}
-                          onChange={handleInputChange}
-                          placeholder="Enter your phone number"
-                          className="w-full px-4 py-3 bg-storm-gray text-cloud-white border border-deep-graphite rounded-inputs focus:border-interactive-blue outline-none transition"
-                        />
-                      </div>
-                    </div>
-                  </div>
+                     </div>
 
-                  {/* Hire Details */}
-                  <div>
-                    <h3 className="text-lg font-semibold mb-3">Hire Details</h3>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Start Date *</label>
-                      <input
-                        type="date"
-                        name="startDate"
-                        value={hireFormData.startDate}
-                        onChange={handleInputChange}
-                        min={new Date().toISOString().split('T')[0]}
-                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                  </div>
+                     {hireFormData.duration && (
+                       <div className="bg-space-gray p-8 rounded-[32px] border border-deep-graphite">
+                          <div className="flex justify-between items-center mb-2">
+                             <span className="text-[12px] font-bold text-ghost-white uppercase tracking-widest">Hire Duration</span>
+                             <span className="text-[14px] font-black text-cloud-white">{hireFormData.duration} {hireFormData.durationType}</span>
+                          </div>
+                          <div className="flex justify-between items-center mb-6">
+                             <span className="text-[12px] font-bold text-ghost-white uppercase tracking-widest">Pilot Rate</span>
+                             <span className="text-[14px] font-black text-cloud-white">₹{selectedDriver.salary.amount}/{selectedDriver.salary.paymentFrequency}</span>
+                          </div>
+                          <div className="pt-6 border-t border-deep-graphite flex justify-between items-end">
+                             <span className="text-[14px] font-black text-cloud-white uppercase tracking-tighter">Total Salary</span>
+                             <span className="text-[32px] font-black text-interactive-blue leading-none">₹{calculateTotalAmount().toFixed(0)}</span>
+                          </div>
+                       </div>
+                     )}
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Duration *</label>
-                      <input
-                        type="number"
-                        name="duration"
-                        value={hireFormData.duration}
-                        onChange={handleInputChange}
-                        min="1"
-                        placeholder="Enter duration"
-                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Duration Type *</label>
-                      <select
-                        name="durationType"
-                        value={hireFormData.durationType}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="days">Days</option>
-                        <option value="weeks">Weeks</option>
-                        <option value="months">Months</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Car ID (optional)</label>
-                    <input
-                      type="text"
-                      name="carId"
-                      value={hireFormData.carId}
-                      onChange={handleInputChange}
-                      placeholder="Enter car ID if assigning"
-                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Special Requirements</label>
-                    <textarea
-                      name="specialRequirements"
-                      value={hireFormData.specialRequirements}
-                      onChange={handleInputChange}
-                      rows="3"
-                      placeholder="Any special requirements or instructions..."
-                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  {/* Price Summary */}
-                  {hireFormData.duration && (
-                    <div className="bg-blue-50 p-4 rounded-lg">
-                      <h3 className="text-lg font-semibold mb-2">Payment Summary</h3>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-700">Total Amount:</span>
-                        <span className="text-2xl font-bold text-blue-600">
-                          ₹{calculateTotalAmount().toFixed(2)}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-600 mt-2">
-                        For {hireFormData.duration} {hireFormData.durationType} @ ₹{selectedDriver.salary.amount}/{selectedDriver.salary.paymentFrequency}
-                      </p>
-                    </div>
-                  )}
-
-                  <div className="flex gap-3 mt-6">
-                    <button
-                      onClick={closeModal}
-                      disabled={processingPayment}
-                      className="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg hover:bg-gray-400 transition disabled:opacity-50"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handlePayment}
-                      disabled={processingPayment}
-                      className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {processingPayment ? 'Processing...' : 'Proceed to Payment'}
-                    </button>
-                  </div>
+                     <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                        <button
+                          type="button"
+                          onClick={() => setShowHireModal(false)}
+                          className="flex-1 px-8 py-5 rounded-buttons font-black text-[14px] uppercase tracking-widest text-ghost-white bg-space-gray hover:bg-deep-graphite transition border border-deep-graphite"
+                        >
+                          Abort
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handlePayment}
+                          disabled={processingPayment || !hireFormData.duration}
+                          className="flex-[2] px-8 py-5 rounded-buttons font-black text-[14px] uppercase tracking-widest text-white bg-interactive-blue hover:bg-vivid-blue transition shadow-xl shadow-interactive-blue/20 disabled:opacity-50"
+                        >
+                          {processingPayment ? 'Securing Pilot...' : 'Confirm & Proceed'}
+                        </button>
+                     </div>
+                  </form>
                 </div>
-              </div>
-            </div>
-          </div>
-        )}
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
     </div>
   );
